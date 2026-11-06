@@ -119,7 +119,7 @@ func VerifyBundle(archive []byte, opts VerifyOptions) (*Verification, error) {
 		v.errorf("keys.json: %v", err)
 		return v, nil
 	}
-	manifestPayload, kid, err := VerifyJWS(string(files["manifest.json"]), keys)
+	manifestPayload, kid, err := verifyJWS(string(files["manifest.json"]), keys)
 	if err != nil {
 		v.errorf("manifest JWS: %v", err)
 		return v, nil

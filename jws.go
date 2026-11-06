@@ -37,10 +37,10 @@ func b64urlDecode(s string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(s)
 }
 
-// VerifyJWS verifies a compact JWS against the key history: the kid must
+// verifyJWS verifies a compact JWS against the key history: the kid must
 // resolve to an Ed25519 SPKI PEM key and the signature must verify. It
 // returns the signed payload and the kid that verified.
-func VerifyJWS(jws string, keys []audit.KeyRecord) (payload []byte, kid string, err error) {
+func verifyJWS(jws string, keys []audit.KeyRecord) (payload []byte, kid string, err error) {
 	parts := strings.Split(jws, ".")
 	if len(parts) != 3 {
 		return nil, "", errors.New("export: jws: malformed compact serialization")

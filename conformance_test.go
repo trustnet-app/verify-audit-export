@@ -262,7 +262,7 @@ func manifestOf(t *testing.T, files map[string][]byte) ManifestPayload {
 	if err := json.Unmarshal(files["keys.json"], &keys); err != nil {
 		t.Fatalf("unmarshal keys.json: %v", err)
 	}
-	raw, _, err := VerifyJWS(string(files["manifest.json"]), keys)
+	raw, _, err := verifyJWS(string(files["manifest.json"]), keys)
 	if err != nil {
 		t.Fatalf("verify manifest: %v", err)
 	}
