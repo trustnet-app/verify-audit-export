@@ -71,6 +71,52 @@ but are account-scoped, so they carry no `purposes.jsonl` or
 
 ---
 
+## Where the signing keys come from
+
+The manifest JWS and every tree head are signed with TrustNet's dedicated
+Ed25519 **audit key**. The signing key is named by `kid` (for example
+`trustnet-audit:v7`), and `keys.json` inside the bundle holds the audit
+public-key history the verifier uses.
+
+TrustNet publishes that same history, unwrapped, at its production keys
+endpoint:
+
+```
+GET https://me.trustnet.app/api/v1/audit/keys
+```
+
+(The handler is also reachable at `https://rp.trustnet.app/api/v1/audit/keys`;
+`me.trustnet.app` is the first-party origin, so its URL is the canonical
+one.) The response is:
+
+```json
+{
+  "keys": [
+    {
+      "key_id": "trustnet-audit:v7",
+      "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n",
+      "algorithm": "Ed25519",
+      "status": "active",
+      "created_at": "2026-08-22T10:11:12Z"
+    }
+  ]
+}
+```
+
+These are the same records as the bundle's `keys.json` (which is the bare
+array, without the `{"keys": …}` wrapper), and both are derived solely from
+the system tree's `audit_key.*` events — a key the trail cannot account for
+cannot appear in either place.
+
+This endpoint is for **out-of-band corroboration only**: an auditor can fetch
+it to check a key's current `status` or confirm that a rotation actually
+happened. `trustnet-verify` itself never calls it; the bundle is self-contained
+and verification stays offline. The endpoint is published by the service and
+is therefore not an external trust anchor — trust in the key history still
+comes from the bundle's RFC 3161 anchor.
+
+---
+
 ## What it checks
 
 `VerifyBundle` runs nine ordered checks. Every hard failure fails the bundle;
@@ -208,6 +254,9 @@ a way an older verifier cannot read.
   external anchor (RFC 3161 token) binding the key history to a time before
   the events were disputed; a self-anchored bundle provides no such external
   corroboration.
+- `https://me.trustnet.app/api/v1/audit/keys` is published for independent
+  corroboration of the key history, but it is served by the service and is
+  not a trust root. Do not let fetching it substitute for the bundle's anchor.
 - Unknown event types are warnings so future taxonomy additions stay
   verifiable. Unknown envelope versions are errors: the verifier never guesses
   at a format it does not understand.
@@ -218,6 +267,11 @@ a way an older verifier cannot read.
 
 ## References
 
+- TrustNet audit public-key history: `GET
+  https://me.trustnet.app/api/v1/audit/keys` (mirror:
+  `https://rp.trustnet.app/api/v1/audit/keys`); served by `persona-api` from
+  `backend/internal/audit/keys.go` and `backend/cmd/persona-api/auditkeys.go`
+  in `trustnet_ory`.
 - TrustNet audit architecture: `_DOCS/02-architecture/audit.md` in the
   `trustnet_ory` repository.
 - Spec §10.1 (per-RP export and verifier obligations), §9 (external
